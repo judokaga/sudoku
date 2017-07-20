@@ -2,5 +2,9 @@ module Main where
 
 import Lib
 
-main :: IO ()
-main = someFunc
+main = do
+    printBoard example
+    putStrLn "==="
+    mapM p $ solutions example
+    where p board = do printBoard board
+                       putStrLn "==="
