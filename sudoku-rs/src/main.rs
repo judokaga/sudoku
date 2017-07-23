@@ -1,13 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
-
-fn solutions(board: [[u8; 9]; 9]) -> Vec<[[u8; 9]; 9]> {
-    solve_from(board, Some((8, 8)))
-}
-
-fn solve_from(board: [[u8; 9]; 9], index: Option<(u8, u8)>) -> Vec<[[u8; 9]; 9]> {
-    unimplemented!()
-}
+#![feature(vec_remove_item)]
 
 trait Rows {
     type Row;
@@ -23,6 +16,7 @@ trait Rows {
 trait Board: Sized {
     fn solve_from(&self, maybe_index: Option<(usize, usize)>) -> Vec<Self>;
     fn solutions(&self) -> Vec<Self>;
+    fn print(&self);
 }
 
 trait Index: Sized {
@@ -38,7 +32,7 @@ impl<T> Rows for Vec<Vec<T>>
     fn columns(&self) -> Self {
         let mut cols = Vec::new();
         if !self[0].is_empty() {
-            cols[0] = self.iter().map(|row| row[0].clone()).collect();
+            cols.push(self.iter().map(|row| row[0].clone()).collect());
             cols.append(&mut self.iter().map(|row| row[1..].to_owned()).collect::<Self>().columns());
         }
         cols
@@ -99,14 +93,20 @@ impl<T> Rows for Vec<Vec<T>>
 
 impl Board for Vec<Vec<u8>> {
     fn solve_from(&self, maybe_index: Option<(usize, usize)>) -> Vec<Self> {
+        // self.print();
+        // println!("===");
+        // println!("[1] index is {:?}", maybe_index);
         if let Some(index) = maybe_index {
+            // println!("index is {:?}, index.prev() is {:?}", index, index.prev());
             let value = self.get(index);
             let is_valid = |v| !self.peer_values(index).contains(v);
-            let valid_values = (1..9).filter(|v| !self.peer_values(index).contains(v));
+            let valid_values = (1..10).filter(|v| !self.peer_values(index).contains(v)).collect::<Vec<_>>();
+            // println!("self.peer_values({:?}) is {:?}", index, self.peer_values(index));
+            // println!("valid_values is {:?}, index is {:?}, value is {:?}", valid_values, index, value);
 
             let new_boards = match value {
                 &0 => {
-                    valid_values.map(|v| self.set(index, v)).collect::<Vec<Self>>()
+                    valid_values.iter().map(|&v| self.set(index, v)).collect::<Vec<Self>>()
                 }
                 v if is_valid(v) => {
                     vec![self.clone()]
@@ -119,21 +119,31 @@ impl Board for Vec<Vec<u8>> {
                 x
             })
         } else {
-            Vec::new()
+            vec![self.clone()]
         }
     }
 
     fn solutions(&self) -> Vec<Self> {
         self.solve_from(Some((8, 8)))
     }
+
+    fn print(&self) {
+        for row in self {
+            println!("{:?}", row);
+        }
+    }
 }
 
 fn peers(rows: Vec<Vec<(usize, usize)>>, index: (usize, usize)) -> Vec<(usize, usize)> {
     let grps = rows.groups();
-    grps.iter().filter(|grp| grp.contains(&index)).cloned().fold(Vec::new(), |mut x, mut y| {
+    let mut prs = grps.iter().filter(|grp| grp.contains(&index)).cloned().fold(Vec::new(), |mut x, mut y| {
         x.append(&mut y);
         x
-    })
+    });
+    prs.sort();
+    prs.dedup();
+    let removed = prs.remove_item(&index);
+    prs
 }
 
 impl Index for (usize, usize) {
@@ -152,4 +162,45 @@ mod test {
     fn test_columns() {}
 }
 
-fn main() {}
+macro_rules! board {
+    ($($e:expr),*) => {
+        {
+            let mut res = vec![];
+            $(
+                res.push($e.to_vec());
+            )*
+            res
+        }
+    }
+}
+
+fn main() {
+    let b = board!(
+        [2,3,4,5,6],
+        [5,4,3,2,1]
+    );
+    b.print();
+    let c = b.columns();
+    c.print();
+
+    let example = vec![
+        vec![4, 0, 0, 0, 0, 0, 8, 0, 5],
+        vec![0, 3, 0, 0, 0, 0, 0, 0, 0],
+        vec![0, 0, 0, 7, 0, 0, 0, 0, 0],
+        vec![0, 2, 0, 0, 0, 0, 0, 6, 0],
+        vec![0, 0, 0, 0, 8, 0, 4, 0, 0],
+        vec![0, 0, 0, 0, 1, 0, 0, 0, 0],
+        vec![0, 0, 0, 6, 0, 3, 0, 7, 0],
+        vec![5, 0, 0, 2, 0, 0, 0, 0, 0],
+        vec![1, 0, 4, 0, 0, 0, 0, 0, 0],
+    ];
+    example.print();
+    println!("===");
+
+    let solutions = example.solutions();
+    println!("solutions.len() is {}", solutions.len());
+    for solution in solutions {
+        solution.print();
+        println!("===");
+    }
+}
