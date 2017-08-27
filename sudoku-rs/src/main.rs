@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-#![allow(unused_variables)]
 #![feature(vec_remove_item)]
 
 trait Rows {
@@ -93,20 +91,13 @@ impl<T> Rows for Vec<Vec<T>>
 
 impl Board for Vec<Vec<u8>> {
     fn solve_from(&self, maybe_index: Option<(usize, usize)>) -> Vec<Self> {
-        // self.print();
-        // println!("===");
-        // println!("[1] index is {:?}", maybe_index);
         if let Some(index) = maybe_index {
-            // println!("index is {:?}, index.prev() is {:?}", index, index.prev());
             let value = self.get(index);
             let is_valid = |v| !self.peer_values(index).contains(v);
-            let valid_values = (1..10).filter(|v| !self.peer_values(index).contains(v)).collect::<Vec<_>>();
-            // println!("self.peer_values({:?}) is {:?}", index, self.peer_values(index));
-            // println!("valid_values is {:?}, index is {:?}, value is {:?}", valid_values, index, value);
-
+            let valid_values = (1..10).filter(|v| !self.peer_values(index).contains(v));
             let new_boards = match value {
                 &0 => {
-                    valid_values.iter().map(|&v| self.set(index, v)).collect::<Vec<Self>>()
+                    valid_values.map(|v| self.set(index, v)).collect::<Vec<Self>>()
                 }
                 v if is_valid(v) => {
                     vec![self.clone()]
@@ -124,7 +115,7 @@ impl Board for Vec<Vec<u8>> {
     }
 
     fn solutions(&self) -> Vec<Self> {
-        self.solve_from(Some((8, 8)))
+        self.solve_from(Some((1, 1)))
     }
 
     fn print(&self) {
@@ -142,7 +133,7 @@ fn peers(rows: Vec<Vec<(usize, usize)>>, index: (usize, usize)) -> Vec<(usize, u
     });
     prs.sort();
     prs.dedup();
-    let removed = prs.remove_item(&index);
+    prs.remove_item(&index);
     prs
 }
 
@@ -199,8 +190,8 @@ fn main() {
 
     let solutions = example.solutions();
     println!("solutions.len() is {}", solutions.len());
-    for solution in solutions {
-        solution.print();
-        println!("===");
-    }
+    // for solution in solutions {
+    //     solution.print();
+    //     println!("===");
+    // }
 }
